@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>index</title>
+</head>
+<body style = "background-color:white">
+<canvas width="5" height="4" id="canv" style="border:1px solid #000000;">
+<script type="text/javascript">
+
+			//    IMPORTANT TO REMEMBER THIS!
+			//------------------------------------
+			// x = columns = horizontal = width
+			// y =  rows   =  vertical  = height
+			//------------------------------------
+
+	window.onload = function() {
+		var gameObjects = [],
+			grainList = [],
+			canvas = document.getElementById("canv"),
+			ctx = canvas.getContext("2d"),
+			dir = 1,
+			rad = 10,
+			imageData = ctx.getImageData(0, 0, canvas.width, canvas.height),
+			sand_size = 0,
+			grainGrid = [];
+	
+			
+		var dune = new Image();
+		dune.onload = function() {
+			ctx.drawImage(dune, 0, 0, ctx.canvas.width, ctx.canvas.height); 
+			
+			ctx.beginPath();
+			ctx.moveTo(10, 20);
+			ctx.lineTo(90, 90);
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = '#ff0000';
+			ctx.stroke();
+		
+			ctx.beginPath();
+			ctx.moveTo(95, 90);
+			ctx.lineTo(180, 10);
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = '#ff0000';
+			ctx.stroke();
+			
+			imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			initGrains();
+		}
+		dune.src = "assets/small-cross.png";
+	
+		function grain(xPos,yPos,active) {
+			this.xPos = xPos;
+			this.yPos = yPos;
+			this.active = active;
+		}
+		
+		function moveGrain(inGrain,moveX,moveY) {
+
+			eraseGrain(inGrain);
+			grainGrid[inGrain.xPos][inGrain.yPos] = null;
+			
+			inGrain.xPos += moveX;
+			inGrain.yPos += moveY;
+			
+			grainGrid[inGrain.xPos][inGrain.yPos] = inGrain;
+		}
+		
+		function eraseGrain(inGrain) {
+			var pixels = imageData.data;
+			var x = inGrain.xPos;
+			var y = inGrain.yPos;
+				
+			pixels[((imageData.width * y) + x) * 4 + 2] = 0;
+			pixels[((imageData.width * y) + x) * 4 + 1] = 0;
+			pixels[((imageData.width * y) + x) * 4 + 0] = 0;
+					
+			pixels[((imageData.width * y) + x) * 4 + 3] = 0; //alpha
+				x
+		}
+		
+		function drawGrain(inGrain) {
+				var pixels = imageData.data;
+				var x = inGrain.xPos;
+				var y = inGrain.yPos;
+				
+				if(inGrain.active) {
+					pixels[((imageData.width * y) + x) * 4 + 2] = 0; //b
+					pixels[((imageData.width * y) + x) * 4 + 1] = 0; //g
+					pixels[((imageData.width * y) + x) * 4 + 0] = 0; //r
+					x
+					pixels[((imageData.width * y) + x) * 4 + 3] = 255; //alpha
+					
+				}
+				else {
+					pixels[((imageData.width * y) + x) * 4 + 2] = 0;
+					pixels[((imageData.width * y) + x) * 4 + 1] = 0;
+					pixels[((imageData.width * y) + x) * 4 + 0] = 255;
+					
+					pixels[((imageData.width * y) + x) * 4 + 3] = 255; //alpha
+				}
+			}
+		 	
+		setInterval( function() {
+			if (gameObjects.length > 0 && false) {
+			dir = dir*-1;
+			var init = 0;
+			var dest = gameObjects.length-1;
+			if (dir === -1) {
+				init = gameObjects.length-1;
+				dest = 0;
+			}
+			for (var i = init; i !== dest; i+=dir) {
+				var thisGrain = gameObjects[i];
+				var xPos = thisGrain.xPos;
+				var yPos = thisGrain.yPos
+				//console.log(i);
+				if (xPos < imageData.height-1) {
+					
+
+					var neighRadS = getPixelChanel((xPos+rad+1), yPos, 3);
+					var neighN = getPixelChanel((xPos-1), yPos, 3);
+					var neighS = getPixelChanel((xPos+1), yPos, 3);
+					
+					var neighSGrid = grainGrid[xPos+1][yPos];
+					
+					var neighSW = getPixelChanel((xPos+1), yPos+1, 3);
+					var neighSWW = getPixelChanel((xPos+1), yPos+2, 3);
+					var neighW = getPixelChanel((xPos), yPos+1, 3);
+					var neighSE = getPixelChanel((xPos+1), yPos-1, 3);
+					var neighE = getPixelChanel((xPos), yPos-1, 3);
+					var neighSEE = getPixelChanel((xPos+1), yPos-2, 3);
+					//var alpha = imageData.data[((imageData.width * (gameObjects[i].xPos+1)) + gameObjects[i].yPos) * 4 + 3];
+					if (!neighSGrid) {
+						//Does not exist
+					}
+					if (neighS < 120 ) {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+						gameObjects[i].xPos++;
+						var shift = Math.random();
+						if (neighSW < 120 && shift > 0.95) {
+							gameObjects[i].yPos++;
+						}
+						if (neighSE < 120 && shift < 0.05) {
+							gameObjects[i].yPos--;
+						}
+						if (gameObjects[i].yPos >= imageData.width) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else if (gameObjects[i].yPos <= 0) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 255);
+							//setPixelBlack(gameObjects[i].xPos, gameObjects[i].yPos);
+							setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+						}
+					}
+					else if((neighSW < 120 ) && (neighSE < 120 ) && gameObjects[i].yPos-1 > 0 && gameObjects[i].yPos+1 <= 500) {
+						var d = -1;
+						if (Math.random() > 0.5) {
+							d = 1;
+						}
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+						gameObjects[i].xPos++;
+						gameObjects[i].yPos += d;
+						if (gameObjects[i].yPos > imageData.width) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else if (gameObjects[i].yPos < 0) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 255);
+							//setPixelBlack(gameObjects[i].xPos, gameObjects[i].yPos);
+							setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+						}
+						//setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 255);
+						//setPixelBlack(gameObjects[i].xPos, gameObjects[i].yPos);
+						//setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+					}
+					else if(neighSW < 120 && neighW < 120 && gameObjects[i].yPos-1 >= 0 && gameObjects[i].yPos+1 <= 500) {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+						gameObjects[i].xPos++;
+						gameObjects[i].yPos++;
+						if (gameObjects[i].yPos > imageData.width) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else if (gameObjects[i].yPos < 0) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 255);
+						//setPixelBlack(gameObjects[i].xPos, gameObjects[i].yPos);
+						setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+						}
+					}
+					else if(neighSE < 120 && neighE < 120 && gameObjects[i].yPos-1 >= 0 && gameObjects[i].yPos+1 <= 500) {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+						gameObjects[i].xPos++;
+						gameObjects[i].yPos--;
+						if (gameObjects[i].yPos > imageData.width) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else if (gameObjects[i].yPos < 0) {
+							setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+							gameObjects.splice(i,1);
+						}
+						else {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 255);
+						//setPixelBlack(gameObjects[i].xPos, gameObjects[i].yPos);
+						setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+						}
+					}
+					else if(neighSEE < 120 && neighE < 120 && neighSE === 255 && neighRadS === 255) {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+						gameObjects[i].xPos++;
+						gameObjects[i].yPos -= 3;
+						setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+					}
+					else if(neighSWW < 120 && neighW < 120 && neighSW === 255 && neighRadS === 255) {
+						setPixel(gameObjects[i].xPos, gameObjects[i].yPos, 0);
+						gameObjects[i].xPos++;
+						gameObjects[i].yPos += 3;
+						setPixelColor(gameObjects[i].xPos, gameObjects[i].yPos, gameObjects[i].r, gameObjects[i].g, gameObjects[i].b);
+					}
+				}				
+			}
+			}
+			
+			drawCanvasData();
+		}, 20);	
+		
+		setInterval( function() {
+			if (gameObjects.length > 0) {
+				for (var i = 0; i < gameObjects.length; i++) {
+					var thisGrain = gameObjects[i];
+					var xPos = thisGrain.xPos;
+					var yPos = thisGrain.yPos
+
+					if (yPos < canvas.height-1) {
+						var neighSGrid = grainGrid[xPos][yPos+1];
+						if (xPos < canvas.width-1) {
+							var neighSEGrid = grainGrid[xPos+1][yPos+1];
+						}
+						if (xPos > 0) {
+							var neighSWGrid = grainGrid[xPos-1][yPos+1];	
+						}
+					
+					
+					
+						if (!neighSGrid) {
+							//Does not exist
+							moveGrain(thisGrain, 0, 1);
+							drawGrain(thisGrain);
+						}
+						else if (!neighSEGrid && !neighSWGrid) {
+							var ran = Math.random();
+							if (ran >= 0.5) {
+								moveGrain(thisGrain, 1, 1);
+							}
+							else {
+								moveGrain(thisGrain, -1, 1);
+							}
+							drawGrain(thisGrain);
+						}
+						else {
+							thisGrain.active = false;
+							drawGrain(thisGrain);
+						}
+					}
+					else {
+						thisGrain.active = false;
+						drawGrain(thisGrain);
+					}
+				}
+			}
+			
+			drawCanvasData();
+		}, 3000);		
+				
+		function drawCanvasData() {
+			//console.log(sandGrains);
+			ctx.clearRect(0,0,canvas.width,canvas.height)
+			ctx.putImageData(imageData, 0, 0);
+			//ctx.font = "10px Arial";
+			//ctx.fillStyle = "white";
+			//ctx.fillText("Radius: " + rad,450,20);
+			//ctx.fillText("Sands : " + sand_size,400,40);
+		}
+		function getMousePos(canvas, evt) {
+			var rect = canvas.getBoundingClientRect();
+			return {
+			x: Math.round(evt.clientX - rect.left) - 1,
+			y: Math.round(evt.clientY - rect.top) - 1			
+			};
+		}
+		
+		canvas.addEventListener('mousedown', function(evt) {
+			var mousePos = getMousePos(canvas, evt);
+			console.log(mousePos.x);
+			console.log(mousePos.y);
+			if(grainGrid[mousePos.x][mousePos.y]) {
+				grainGrid[mousePos.x][mousePos.y].active = false;
+				drawGrain(grainGrid[mousePos.x][mousePos.y]);
+				drawCanvasData();
+			}
+			else {
+				console.log("No grain there");
+			}
+			return;
+			if (getPixelChanel(mousePos.y, mousePos.x, 3) === 0) {
+				for (var i = -rad; i < rad; i++) {
+					for (var i2 = -rad; i2 < rad; i2++){
+						var yDis = mousePos.y+i - mousePos.y;
+						var xDis = mousePos.x+i2 - mousePos.x;
+						var diagonalDis = Math.sqrt(Math.pow(yDis, 2) + Math.pow(xDis, 2));
+						if (diagonalDis <= rad && mousePos.x+i <= imageData.width && mousePos.y+i >= 0) {
+							gameObjects.push(new grain(mousePos.y+i, mousePos.x+i2,0,0,0));
+							sand_size++;
+						}						
+					}					
+				}				
+			}
+			else {
+				for (var id =0; id < gameObjects.length; id++) {
+					for (var i = -rad; i < rad; i++) {
+						for (var i2 = -rad; i2 < rad; i2++){
+							var yDis = gameObjects[id].xPos - mousePos.y;
+							var xDis = gameObjects[id].yPos - mousePos.x;
+							var diagonalDis = Math.sqrt(Math.pow(yDis, 2) + Math.pow(xDis, 2));
+							if (diagonalDis <= rad && mousePos.x+i <= imageData.width && mousePos.y+i >= 0) {
+							
+								setPixel(gameObjects[id].xPos, gameObjects[id].yPos, 0);
+								gameObjects.splice(id,1);
+								break;
+							}						
+						}					
+					}					
+					
+				}				
+			}
+						
+		}, false);
+		
+		window.addEventListener('keydown',doKeyDown,true);
+		function doKeyDown(evt){
+			switch (evt.keyCode) {
+				case 38:  /* Up arrow was pressed */
+					if (rad <= 16) {
+						rad += 2;
+					}
+					break;
+				case 40:  /* Down arrow was pressed */
+					if (rad >= 4) {
+						rad -= 2;
+					}
+					break;
+			}
+		}
+		
+		function initGrains() {
+			var pixels = imageData.data;
+			
+			//     IMPORTANT TO REMEMBER THIS!
+			//------------------------------------
+			// x = columns = horizontal = width
+			// y =  rows   =  vertical  = height
+			//------------------------------------
+			
+			var x = 0;
+			var y = 0;
+
+			for(var col = 0; col < canvas.width; col++) {
+				grainGrid[col] = [];
+			}
+			
+			//Each pixel has 4 entries in image data array: r,g,b,a
+			for(var i = 0; i < pixels.length; i += 4) {
+				var r = pixels[i];
+				var g = pixels[i+1];
+				var b = pixels[i+2];
+				var alpha = pixels[i+3];
+				
+				if(i > 0 && ((i/4) % canvas.width) == 0) {
+					//New row of pixels
+					x = 0;
+					y++;
+					//y=0;
+					//x++;
+				}
+
+				if(r === 0 && g === 0 && b === 0 && alpha === 255) {
+					var newGrain = new grain(x, y, true);
+
+					gameObjects.push(newGrain);
+					
+					grainGrid[x][y] = newGrain;
+					
+					sand_size++;
+				}
+				else {
+					grainGrid[x][y] = null;
+				}
+				
+				//Next pixel
+				x++;
+				//y++;
+				
+			}
+			
+			console.log(gameObjects);
+			console.log(grainGrid);
+			
+			if(!grainGrid[0][0]) {
+				//grain does not exist
+			}
+			
+		}
+		
+	};
+	
+</script>
+  
+</body>
+</html>
